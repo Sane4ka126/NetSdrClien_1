@@ -49,7 +49,7 @@ jobs:
           /k:"Sane4ka126_NetSdrClien_1" `
           /o:"sane4ka126" `
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
-          /d:sonar.cs.opencover.reportsPaths="**/coverage.xml" `
+          /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" `
           /d:sonar.cpd.cs.minimumTokens=40 `
           /d:sonar.cpd.cs.minimumLines=5 `
           /d:sonar.exclusions=**/bin/**,**/obj/**,**/sonarcloud.yml `
@@ -60,13 +60,13 @@ jobs:
         run: dotnet restore NetSdrClient.sln
       - name: Build
         run: dotnet build NetSdrClient.sln -c Release --no-restore
-      #- name: Tests with coverage (OpenCover)
-      #  run: |
-      #    dotnet test NetSdrClientAppTests/NetSdrClientAppTests.csproj -c Release --no-build `
-      #      /p:CollectCoverage=true `
-      #      /p:CoverletOutput=TestResults/coverage.xml `
-      #      /p:CoverletOutputFormat=opencover
-      #  shell: pwsh
+      - name: Tests with coverage (OpenCover)
+        run: |
+          dotnet test NetSdrClientAppTests/NetSdrClientAppTests.csproj -c Release --no-build `
+            /p:CollectCoverage=true `
+            /p:CoverletOutputFormat=opencover `
+            /p:CoverletOutput=../coverage.opencover.xml
+        shell: pwsh
       # 3) END: SonarScanner
       - name: SonarScanner End
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
