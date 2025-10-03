@@ -12,7 +12,7 @@
 #       which means that the analysis will start automatically without the need to set up GitHub Actions.
 #     * This behavior can be changed in Administration > Analysis Method.
 #
-# 3. Follow the SonarCloud in-product tutorial
+# 3. Follow the SonarCloud in-product tutorial 
 #     * a. Copy/paste the Project Key and the Organization Key into the args parameter below
 #          (You'll find this information in SonarCloud. Click on "Information" at the bottom left)
 #
