@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 
 namespace EchoServer
 {
-    public class EchoServer
+    public class EchoServer : IDisposable
     {
         private readonly int _port;
         private TcpListener _listener;
-        private CancellationTokenSource _cancellationTokenSource;
+        private readonly CancellationTokenSource _cancellationTokenSource;
+        private bool _disposed;
 
-        //constuctor
+        //constructor
         public EchoServer(int port)
         {
             _port = port;
@@ -75,37 +76,49 @@ namespace EchoServer
 
         public void Stop()
         {
-            _cancellationTokenSource.Cancel();
-            _listener.Stop();
-            _cancellationTokenSource.Dispose();
-            Console.WriteLine("Server stopped.");
+            if (!_disposed)
+            {
+                _cancellationTokenSource.Cancel();
+                _listener?.Stop();
+                Console.WriteLine("Server stopped.");
+            }
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                Stop();
+                _cancellationTokenSource?.Dispose();
+                _disposed = true;
+            }
         }
 
         public static async Task Main(string[] args)
         {
-            EchoServer server = new EchoServer(5000);
-
-            // Start the server in a separate task
-            _ = Task.Run(() => server.StartAsync());
-
-            string host = "127.0.0.1"; // Target IP
-            int port = 60000;          // Target Port
-            int intervalMilliseconds = 5000; // Send every 3 seconds
-
-            using (var sender = new UdpTimedSender(host, port))
+            using (var server = new EchoServer(5000))
             {
-                Console.WriteLine("Press any key to stop sending...");
-                sender.StartSending(intervalMilliseconds);
+                // Start the server in a separate task
+                _ = Task.Run(() => server.StartAsync());
 
-                Console.WriteLine("Press 'q' to quit...");
-                while (Console.ReadKey(intercept: true).Key != ConsoleKey.Q)
+                string host = "127.0.0.1"; // Target IP
+                int port = 60000;          // Target Port
+                int intervalMilliseconds = 5000; // Send every 5 seconds
+
+                using (var sender = new UdpTimedSender(host, port))
                 {
-                    // Just wait until 'q' is pressed
-                }
+                    Console.WriteLine("Press any key to stop sending...");
+                    sender.StartSending(intervalMilliseconds);
 
-                sender.StopSending();
-                server.Stop();
-                Console.WriteLine("Sender stopped.");
+                    Console.WriteLine("Press 'q' to quit...");
+                    while (Console.ReadKey(intercept: true).Key != ConsoleKey.Q)
+                    {
+                        // Just wait until 'q' is pressed
+                    }
+
+                    sender.StopSending();
+                    Console.WriteLine("Sender stopped.");
+                }
             }
         }
     }
@@ -117,6 +130,7 @@ namespace EchoServer
         private readonly int _port;
         private readonly UdpClient _udpClient;
         private Timer _timer;
+        private ushort _sequenceNumber;
 
         public UdpTimedSender(string host, int port)
         {
@@ -133,8 +147,6 @@ namespace EchoServer
             _timer = new Timer(SendMessageCallback, null, 0, intervalMilliseconds);
         }
 
-        ushort i = 0;
-
         private void SendMessageCallback(object state)
         {
             try
@@ -143,9 +155,9 @@ namespace EchoServer
                 Random rnd = new Random();
                 byte[] samples = new byte[1024];
                 rnd.NextBytes(samples);
-                i++;
+                _sequenceNumber++;
 
-                byte[] msg = (new byte[] { 0x04, 0x84 }).Concat(BitConverter.GetBytes(i)).Concat(samples).ToArray();
+                byte[] msg = (new byte[] { 0x04, 0x84 }).Concat(BitConverter.GetBytes(_sequenceNumber)).Concat(samples).ToArray();
                 var endpoint = new IPEndPoint(IPAddress.Parse(_host), _port);
 
                 _udpClient.Send(msg, msg.Length, endpoint);
