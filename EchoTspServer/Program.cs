@@ -5,24 +5,25 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+
 namespace EchoServer
 {
     public class EchoServer
     {
         private readonly int _port;
-        private TcpListener _listener;
+        private readonly TcpListener _listener;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
-        //constuctor
+        // Constructor
         public EchoServer(int port)
         {
             _port = port;
+            _listener = new TcpListener(IPAddress.Any, _port); // Initialize _listener
             _cancellationTokenSource = new CancellationTokenSource();
         }
 
         public async Task StartAsync()
         {
-            _listener = new TcpListener(IPAddress.Any, _port);
             _listener.Start();
             Console.WriteLine($"Server started on port {_port}.");
 
@@ -45,7 +46,7 @@ namespace EchoServer
             Console.WriteLine("Server shutdown.");
         }
 
-      private static async Task HandleClientAsync(TcpClient client, CancellationToken token)
+        private static async Task HandleClientAsync(TcpClient client, CancellationToken token)
         {
             using (NetworkStream stream = client.GetStream())
             {
@@ -90,7 +91,7 @@ namespace EchoServer
 
             string host = "127.0.0.1"; // Target IP
             int port = 60000;          // Target Port
-            int intervalMilliseconds = 5000; // Send every 3 seconds
+            int intervalMilliseconds = 5000; // Send every 5 seconds
 
             using (var sender = new UdpTimedSender(host, port))
             {
@@ -109,7 +110,6 @@ namespace EchoServer
             }
         }
     }
-
 
     public class UdpTimedSender : IDisposable
     {
@@ -133,13 +133,13 @@ namespace EchoServer
             _timer = new Timer(SendMessageCallback, null, 0, intervalMilliseconds);
         }
 
-        ushort i = 0;
+        private ushort i = 0;
 
         private void SendMessageCallback(object state)
         {
             try
             {
-                //dummy data
+                // Dummy data
                 Random rnd = new Random();
                 byte[] samples = new byte[1024];
                 rnd.NextBytes(samples);
