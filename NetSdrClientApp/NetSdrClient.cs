@@ -17,6 +17,8 @@ namespace NetSdrClientApp
         private ITcpClient _tcpClient;
         private IUdpClient _udpClient;
 
+
+
         public bool IQStarted { get; set; }
 
         public NetSdrClient(ITcpClient tcpClient, IUdpClient udpClient)
@@ -66,7 +68,7 @@ namespace NetSdrClientApp
                 return;
             }
 
-;           var iqDataMode = (byte)0x80;
+; var iqDataMode = (byte)0x80;
             var start = (byte)0x02;
             var fifo16bitCaptureMode = (byte)0x01;
             var n = (byte)1;
@@ -74,7 +76,7 @@ namespace NetSdrClientApp
             var args = new[] { iqDataMode, start, fifo16bitCaptureMode, n };
 
             var msg = NetSdrMessageHelper.GetControlItemMessage(MsgTypes.SetControlItem, ControlItemCodes.ReceiverState, args);
-            
+
             await SendTcpRequest(msg);
 
             IQStarted = true;
@@ -137,8 +139,7 @@ namespace NetSdrClientApp
         {
             if (!_tcpClient.Connected)
             {
-                Console.WriteLine("No active connection.");
-                return null;
+                throw new InvalidOperationException("No active connection.");
             }
 
             responseTaskSource = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -153,7 +154,7 @@ namespace NetSdrClientApp
 
         private void _tcpClient_MessageReceived(object? sender, byte[] e)
         {
-            //TODO: add Unsolicited messages handling here
+            // Handle TCP response messages
             if (responseTaskSource != null)
             {
                 responseTaskSource.SetResult(e);
